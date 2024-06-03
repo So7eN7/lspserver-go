@@ -15,8 +15,13 @@ func main() {
   scanner.Split(rpc.Split)
 
   for scanner.Scan() {
-    msg := scanner.Text()
-    HandleMessage(msg)  
+    msg := scanner.Bytes()
+    method, content, err := rpc.DecodeMessage(msg)
+    if err != nil {
+      logger.Printf("Error: %s", err)
+      continue
+    }
+    HandleMessage(logger, method, content)  
   }
 }
 
@@ -28,6 +33,6 @@ func getLogger(filename string) *log.Logger {
   return log.New(logfile, "[lspserver_go]", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func HandleMessage (msg any) {
-
+func HandleMessage (logger *log.Logger, method string, contents []byte) {
+  logger.Printf("method: %s", method)
 }
