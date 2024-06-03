@@ -40,3 +40,25 @@ func DecodeMessage(msg []byte) (string, []byte, error) {
 
   return baseMessage.Method, content[:contentlen] ,nil 
 }
+
+// SplitFunc bufio
+func Split(data []byte, _ bool) (advance int, token []byte, err error) {
+  header, content, found := bytes.Cut(data, []byte{'\r', '\n', '\r', '\n'})
+  if !found {
+    return 0, nil, nil // waiting till it's found
+  }
+
+  contentLenBytes := header[len("content_len: "):] // after content_len
+  contentlen, err := strconv.Atoi(string(contentLenBytes))
+  if err != nil {
+    return 0, nil, err 
+  }
+
+  if len(content) < contentlen { // waiting till the length is met
+    return 0, nil, nil
+  } 
+
+  totallen := len(header) + 4 + contentlen
+
+  return totallen, data[:totallen], nil
+}
