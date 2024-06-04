@@ -66,3 +66,27 @@ type Position struct {
   Line int `json:"line"`
   Char int `json:"char"`
 }
+
+type DefinitionRequest struct {
+  Request
+  Params HoverParams `json:"params"`
+}
+
+type DefinitionParams struct {
+  TextDocumentPositionParams
+}
+
+type DefinitionResponse struct {
+  Response
+  Result Location `json:"result"`
+}
+
+type Location struct {
+  URI string `json:"uri"`
+  Range Range `json:"range"`
+}
+
+type Range struct {
+  Start Position `json:"start"`
+  End Position `json:"end"`
+}

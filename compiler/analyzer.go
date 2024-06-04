@@ -34,3 +34,26 @@ func (a *Analyzer) Hover(id int, uri string, position lsp.Position) lsp.HoverRes
       },
     }
 }
+
+func (a *Analyzer) Definition(id int, uri string, position lsp.Position) lsp.DefinitionResponse {
+  
+  return lsp.DefinitionResponse{
+      Response: lsp.Response{
+        ID: &id,
+        RPC: "2.0",        
+      },
+      Result: lsp.Location{
+        URI: uri,
+        Range: lsp.Range{
+          Start: lsp.Position{
+            Line: position.Line - 1, // placeholder 
+            Char: 0,
+          },
+          End: lsp.Position{
+            Line: position.Line - 1,
+            Char: 0, 
+          },
+        },
+      },
+    }
+}
