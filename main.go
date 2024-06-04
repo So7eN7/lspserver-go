@@ -6,6 +6,7 @@ import (
 	"log"
 	"lspserver_go/lsp"
 	"lspserver_go/rpc"
+  "lspserver_go/compiler"
 	"os"
 	"path"
 )
@@ -19,6 +20,8 @@ func main() {
   scanner := bufio.NewScanner(os.Stdin)
   scanner.Split(rpc.Split)
 
+  analyzer := compiler.NewAnalyze() 
+
   for scanner.Scan() {
     msg := scanner.Bytes()
     method, content, err := rpc.DecodeMessage(msg)
@@ -26,7 +29,7 @@ func main() {
       logger.Printf("Error: %s", err)
       continue
     }
-    HandleMessage(logger, method, content)  
+    HandleMessage(logger, analyzer,method, content)  
   }
 }
 
@@ -38,10 +41,10 @@ func getLogger(filename string) *log.Logger {
   return log.New(logfile, "[lspserver_go]", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func HandleMessage (logger *log.Logger, method string, contents []byte) {
+func HandleMessage (logger *log.Logger, analyzer compiler.Analyzer, method string, contents []byte) {
   logger.Printf("received msg with method: %s", method)
   switch method {
-  case "initialize":
+  case"initialize":
     var request lsp.InitializeRequest
     if err := json.Unmarshal(contents, &request); err != nil {
       logger.Printf("could not parse: %s", err)
@@ -57,8 +60,17 @@ func HandleMessage (logger *log.Logger, method string, contents []byte) {
   case "textDocument/didOpen":
     var request lsp.DidOpenTextDocumentNotif
     if err := json.Unmarshal(contents, &request); err != nil {
-      logger.Printf("could not parse: %s", err)
+      logger.Printf("textDoc/didOpen: %s", err)
     }
     logger.Printf("opened to: %s %s", request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+    analyzer.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+  case "textDocument/didChange":
+    var request lsp.DidChangeTextDoucumentNotif
+    if err := json.Unmarshal(contents, &request); err != nil {
+      logger.Printf("textDoc/didChange: %s", err)
+    }
+    logger.Printf("changed : %s %s", request.Params.TextDocument.URI, request.Params.ContentChanges)
+    analyzer.OpenDocument(request.Params.TextDocument.URI, request.Params.ContentChanges)
+  
   }
 }

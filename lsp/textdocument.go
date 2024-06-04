@@ -15,3 +15,26 @@ type DidOpenTextDocumentNotif struct {
 type DidOpenTextDocumentParams struct {
   TextDocument TextDocumentItem `json:"textDocument"` 
 }
+
+type DidChangeTextDoucumentNotif struct {
+  Notification
+  Params DidChangeTextDoucumentParams `json:"params"`
+}
+
+type DidChangeTextDoucumentParams struct {
+  TextDocument VersionTextDocumentIdentifer `json:"textdocument"` 
+  ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+type TextDocumentIdentifier struct {
+  URI string `json:"uri"`
+}
+
+type VersionTextDocumentIdentifer struct {
+  TextDocumentIdentifier
+  Version int `json:"version"`
+}
+
+type TextDocumentContentChangeEvent struct {
+  Text string `json:"text"`
+}
