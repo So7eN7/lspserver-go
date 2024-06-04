@@ -5,10 +5,14 @@ import (
 	"log"
 	"lspserver_go/rpc"
 	"os"
+  "path"
 )
 
 func main() {
-  logger := getLogger("/home/so7en/Desktop/lspserver-go/log.txt")
+  root_folder, _ := os.Getwd()
+  log_path := path.Join((root_folder), "log.txt")
+  print(log_path)
+  logger := getLogger(log_path)
   logger.Println("logger started...")
 
   scanner := bufio.NewScanner(os.Stdin)
