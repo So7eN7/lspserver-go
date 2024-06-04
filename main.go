@@ -2,16 +2,17 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"log"
+	"lspserver_go/lsp"
 	"lspserver_go/rpc"
 	"os"
-  "path"
+	"path"
 )
 
 func main() {
   root_folder, _ := os.Getwd()
   log_path := path.Join((root_folder), "log.txt")
-  print(log_path)
   logger := getLogger(log_path)
   logger.Println("logger started...")
 
@@ -38,5 +39,13 @@ func getLogger(filename string) *log.Logger {
 }
 
 func HandleMessage (logger *log.Logger, method string, contents []byte) {
-  logger.Printf("method: %s", method)
+  logger.Printf("received msg with method: %s", method)
+  switch method {
+  case "initialize":
+    var request lsp.InitializeRequest
+    if err := json.Unmarshal(contents, &request); err != nil {
+      logger.Printf("could not parse: %s", err)
+    }
+    logger.Printf("connected to: %s %s", request.Params.ClientInfo.Name, request.Params.ClientInfo)
+  }
 }
