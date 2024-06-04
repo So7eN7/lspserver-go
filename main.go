@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"log"
+	"lspserver_go/compiler"
 	"lspserver_go/lsp"
 	"lspserver_go/rpc"
-  "lspserver_go/compiler"
 	"os"
 	"path"
 )
@@ -21,6 +22,7 @@ func main() {
   scanner.Split(rpc.Split)
 
   analyzer := compiler.NewAnalyze() 
+  writer := os.Stdout
 
   for scanner.Scan() {
     msg := scanner.Bytes()
@@ -29,7 +31,7 @@ func main() {
       logger.Printf("Error: %s", err)
       continue
     }
-    HandleMessage(logger, analyzer,method, content)  
+    HandleMessage(logger, writer, analyzer,method, content)  
   }
 }
 
@@ -41,7 +43,12 @@ func getLogger(filename string) *log.Logger {
   return log.New(logfile, "[lspserver_go]", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func HandleMessage (logger *log.Logger, analyzer compiler.Analyzer, method string, contents []byte) {
+func WriteResponse(writer io.Writer, msg any) {
+    reply := rpc.EncodeMessage(msg)
+    writer.Write([]byte(reply))
+}
+
+func HandleMessage (logger *log.Logger, writer io.Writer, analyzer compiler.Analyzer, method string, contents []byte) {
   logger.Printf("received msg with method: %s", method)
   switch method {
   case"initialize":
@@ -52,9 +59,7 @@ func HandleMessage (logger *log.Logger, analyzer compiler.Analyzer, method strin
     logger.Printf("connected to: %s %s", request.Params.ClientInfo.Name, request.Params.ClientInfo)
 
     msg := lsp.NewInitializeResponse(request.ID)
-    reply := rpc.EncodeMessage(msg)
-    writer := os.Stdout
-    writer.Write([]byte(reply))
+    WriteResponse(writer, msg)
     logger.Print("reply sent")
 
   case "textDocument/didOpen":
@@ -70,7 +75,15 @@ func HandleMessage (logger *log.Logger, analyzer compiler.Analyzer, method strin
       logger.Printf("textDoc/didChange: %s", err)
     }
     logger.Printf("changed : %s %s", request.Params.TextDocument.URI, request.Params.ContentChanges)
-    analyzer.OpenDocument(request.Params.TextDocument.URI, request.Params.ContentChanges)
-  
+    for _, change := range request.Params.ContentChanges {
+      analyzer.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+    }
+  case "textDocument/hover":
+    var request lsp.HoverRequest
+    if err := json.Unmarshal(contents, &request); err != nil {
+      logger.Printf("textDoc/hover: %s", err)
+    }
+    response := analyzer.Hover(request.ID, request.Params.TextDocument.URI, request.Params.Position)
+    WriteResponse(writer, response)
   }
 }
