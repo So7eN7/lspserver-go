@@ -64,11 +64,22 @@ func HandleMessage (logger *log.Logger, writer io.Writer, analyzer compiler.Anal
 
   case "textDocument/didOpen":
     var request lsp.DidOpenTextDocumentNotif
-    if err := json.Unmarshal(contents, &request); err != nil {
-      logger.Printf("textDoc/didOpen: %s", err)
-    }
-    logger.Printf("opened to: %s %s", request.Params.TextDocument.URI, request.Params.TextDocument.Text)
-    analyzer.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Printf("textDocument/didOpen: %s", err)
+			return
+		}
+		logger.Printf("Opened: %s", request.Params.TextDocument.URI)
+		diagnostics := analyzer.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+		WriteResponse(writer, lsp.PublishDiagnosticsNotification{
+			Notification: lsp.Notification{
+				RPC:    "2.0",
+				Method: "textDocument/publishDiagnostics",
+			},
+			Params: lsp.PublishDiagnosticsParams{
+				URI:         request.Params.TextDocument.URI,
+				Diagnostics: diagnostics,
+			},
+		})  
   case "textDocument/didChange":
     var request lsp.DidChangeTextDoucumentNotif
     if err := json.Unmarshal(contents, &request); err != nil {
@@ -76,7 +87,17 @@ func HandleMessage (logger *log.Logger, writer io.Writer, analyzer compiler.Anal
     }
     logger.Printf("changed : %s %s", request.Params.TextDocument.URI, request.Params.ContentChanges)
     for _, change := range request.Params.ContentChanges {
-      analyzer.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+      diagnostics := analyzer.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+      WriteResponse(writer ,lsp.PublishDiagnosticsNotification{
+        Notification: lsp.Notification{
+          RPC: "2.0",
+          Method: "textDocument/publishDiagnostics",
+        },
+        Params: lsp.PublishDiagnosticsParams{
+          URI: request.Params.TextDocument.URI,
+          Diagnostics: diagnostics,
+        },
+      })
     }
   case "textDocument/hover":
     var request lsp.HoverRequest

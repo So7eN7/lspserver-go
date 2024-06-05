@@ -14,12 +14,39 @@ func NewAnalyze() Analyzer {
   return Analyzer{Documents: map[string]string{}}
 }
 
-func (a *Analyzer) OpenDocument(uri, text string) {
-  a.Documents[uri] = text
+func GetDiagnosticsForFile(text string) []lsp.Diagnostics {
+  diagnostics := []lsp.Diagnostics{}
+  for row, line := range strings.Split(text, "\n"){
+    if strings.Contains(line, "example") {
+      idx := strings.Index(line, "example")
+      diagnostics = append(diagnostics, lsp.Diagnostics{
+        Range: LineRange(row, idx, idx+len("example")),
+        Severity: 1,
+        Source: "Halo",
+        Message: "The Great Journey is nigh",
+      })
+    }
+    if strings.Contains(line, "example") {
+      idx := strings.Index(line, "example")
+      diagnostics = append(diagnostics, lsp.Diagnostics{
+        Range: LineRange(row, idx, idx+len("example")),
+        Severity: 1,
+        Source: "Halo",
+        Message: "The Great Journey is nigh",
+      })
+    }
+  }
+  return diagnostics
 }
 
-func (a *Analyzer) UpdateDocument(uri, text string) {
+func (a *Analyzer) OpenDocument(uri, text string) []lsp.Diagnostics {
   a.Documents[uri] = text
+  return GetDiagnosticsForFile(text)
+}
+
+func (a *Analyzer) UpdateDocument(uri, text string) []lsp.Diagnostics {
+  a.Documents[uri] = text
+  return GetDiagnosticsForFile(text)
 }
 
 func (a *Analyzer) Hover(id int, uri string, position lsp.Position) lsp.HoverResponse {
