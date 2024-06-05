@@ -99,6 +99,12 @@ func HandleMessage (logger *log.Logger, writer io.Writer, analyzer compiler.Anal
     }
     response := analyzer.TextDocumentCodeAction(request.ID, request.Params.TextDocument.URI)
     WriteResponse(writer, response)
-
+  case "textDocument/codeCompletion":
+    var request lsp.CompletionRequest
+    if err := json.Unmarshal(contents, &request); err != nil {
+      logger.Printf("textDoc/codeCompletion: %s", err)
+    }
+    response := analyzer.TextDocumentCompletion(request.ID, request.Params.TextDocument.URI)
+    WriteResponse(writer, response)
   }
 }
