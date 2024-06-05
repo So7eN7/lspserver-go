@@ -1,0 +1,3 @@
+# LSPServer
+
+Written in Go, It has the basis for everything you need in order to make a functional LSP for any language...
